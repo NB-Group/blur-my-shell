@@ -61,6 +61,19 @@
         </child>
 
         <child>
+          <object class="AdwActionRow" id="liquid_glass_row">
+            <property name="title" translatable="yes">Liquid glass</property>
+            <property name="subtitle" translatable="yes">Dynamic mode only. Replace the gaussian blur with an Apple-style liquid glass that refracts the live desktop behind.</property>
+            <property name="sensitive" bind-source="blur" bind-property="state" bind-flags="sync-create" />
+            <child>
+              <object class="GtkSwitch" id="liquid_glass">
+                <property name="valign">center</property>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <child>
           <object class="PipelineChooseRow" id="pipeline_choose_row">
             <property name="sensitive" bind-source="blur" bind-property="state" bind-flags="sync-create" />
           </object>

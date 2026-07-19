@@ -27,7 +27,9 @@ export const Panel = GObject.registerClass({
         'override_background_dynamically_mode_row',
         'override_background_dynamically_mode',
         'hidetopbar_compatibility',
-        'dtp_blur_original_panel'
+        'dtp_blur_original_panel',
+        'liquid_glass_row',
+        'liquid_glass'
     ],
 }, class Panel extends Adw.PreferencesPage {
     constructor(preferences, pipelines_manager, pipelines_page) {
@@ -65,6 +67,10 @@ export const Panel = GObject.registerClass({
         );
         this.preferences.panel.settings.bind(
             'corner-radius', this._corner_radius, 'value',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        this.preferences.panel.settings.bind(
+            'liquid-glass', this._liquid_glass, 'active',
             Gio.SettingsBindFlags.DEFAULT
         );
         this.preferences.panel.settings.bind(
@@ -121,6 +127,7 @@ export const Panel = GObject.registerClass({
         this._brightness_row.set_visible(!is_static_blur);
         this._corner_radius_row.set_visible(!is_static_blur && this.preferences.ROUNDED_BLUR_FOUND);
         this._corner_radius_not_found_row.set_visible(!is_static_blur && !this.preferences.ROUNDED_BLUR_FOUND);
+        this._liquid_glass_row.set_visible(!is_static_blur);
 
         this.proximity_option_changed();
     }

@@ -25,9 +25,14 @@ export const PopupBlurSurfaceStyle = class PopupBlurSurfaceStyle {
         const base_style = this.original_target_style ?? '';
         const separator = base_style.trim() && !base_style.trim().endsWith(';') ? '; ' : '';
 
+        // liquid glass: drop the menu's own border/box-shadow (the black 1px
+        // hairline around popups) so the glass edge is clean. Gaussian blur
+        // keeps the original border.
+        const lg_extra = this.surface.settings.popup.LIQUID_GLASS
+            ? 'border: none; box-shadow: none;' : '';
         try {
             this.surface.target.set_style(
-                `${base_style}${separator}border-radius: ${this.surface.get_corner_radius()}px;`
+                `${base_style}${separator}border-radius: ${this.surface.get_corner_radius()}px; ${lg_extra}`
             );
             this.target_style_set = true;
         } catch (e) {

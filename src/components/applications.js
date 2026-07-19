@@ -561,7 +561,8 @@ export const ApplicationsBlur = class ApplicationsBlur {
     }
 
     /// Compute the size and position for a blur actor.
-    /// Coordinates are relative to window buffer's corner.
+    /// Coordinates are relative to the window_actor (frame - buffer), because
+    /// the blur_actor lives inside window_actor.
     compute_allocation(meta_window) {
         const scale = this.compute_scale(meta_window);
 
@@ -603,8 +604,9 @@ export const ApplicationsBlur = class ApplicationsBlur {
                 // reset the opacity
                 this.set_window_opacity(window_actor, 255);
 
-                // remove the blurred actor
-                window_actor.remove_child(blur_actor);
+                // remove the blurred actor (parent is uiGroup for dynamic,
+                // window_actor for static — use the actual parent)
+                blur_actor.get_parent()?.remove_child(blur_actor);
                 bg_manager._bms_pipeline.destroy();
                 bg_manager.destroy();
                 blur_actor.destroy();

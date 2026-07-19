@@ -3,6 +3,7 @@ import Meta from 'gi://Meta';
 import St from 'gi://St';
 
 import { DummyPipeline } from '../../conveniences/dummy_pipeline.js';
+import { LiquidGlassPipeline } from '../../conveniences/liquid_glass_pipeline.js';
 import { PaintSignals } from '../../conveniences/paint_signals.js';
 import { PopupBlurSurfaceFade } from './surface_fade.js';
 import { PopupBlurSurfacePlacement } from './surface_placement.js';
@@ -89,15 +90,23 @@ export const PopupBlurSurface = class PopupBlurSurface {
         });
         this.blur_actor.add_style_class_name('bms-popup-blurred-widget');
         this.track_owned_actor(this.blur_actor, { actor: true, blur_actor: true });
-        this.pipeline = new DummyPipeline(
-            this.effects_manager,
-            this.settings.popup,
-            this.blur_actor,
-            {
-                corner_radius_key: this.corner_radius.key,
-                corner_radius_getter: () => this.get_corner_radius(),
-            }
-        );
+        if (this.settings.popup.LIQUID_GLASS)
+            this.pipeline = new LiquidGlassPipeline(
+                this.effects_manager,
+                this.settings.popup,
+                this.blur_actor,
+                { corner_radius_getter: () => this.get_corner_radius() }
+            );
+        else
+            this.pipeline = new DummyPipeline(
+                this.effects_manager,
+                this.settings.popup,
+                this.blur_actor,
+                {
+                    corner_radius_key: this.corner_radius.key,
+                    corner_radius_getter: () => this.get_corner_radius(),
+                }
+            );
         this.corner_effect = this.create_corner_effect();
         this.actor = this.blur_actor;
         return true;

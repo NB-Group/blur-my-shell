@@ -23,7 +23,11 @@ export const Other = GObject.registerClass({
 
         'hack_level',
         'debug',
-        'reset'
+        'reset',
+
+        'liquid_glass_blur_row',
+        'liquid_glass_tint_row',
+        'liquid_glass_refraction_row'
     ],
 }, class Other extends Adw.PreferencesPage {
     constructor(preferences, pipelines_manager, pipelines_page) {
@@ -80,6 +84,26 @@ export const Other = GObject.registerClass({
             'debug', this._debug, 'active',
             Gio.SettingsBindFlags.DEFAULT
         );
+
+        // liquid glass tuning (global — applies to panel/dash/popup)
+        this.preferences.settings.bind(
+            'liquid-glass-blur', this._liquid_glass_blur_row, 'value',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        this.preferences.settings.bind(
+            'liquid-glass-tint', this._liquid_glass_tint_row, 'value',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        this.preferences.settings.bind(
+            'liquid-glass-refraction', this._liquid_glass_refraction_row, 'value',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+
+        // force display precision: AdwSpinRow defaults to digits=0, which renders
+        // 0.1 as "0". Set it in code too (the .ui sets it as well) to be safe.
+        this._liquid_glass_blur_row.digits = 0;
+        this._liquid_glass_tint_row.digits = 2;
+        this._liquid_glass_refraction_row.digits = 1;
 
         this._reset.connect('clicked', () => this.preferences.reset());
     }

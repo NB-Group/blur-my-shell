@@ -94,6 +94,19 @@
             <default>false</default>
             <summary>Boolean, set to true to activate debug mode (more verbose journalctl logs)</summary>
         </key>
+        <!-- LIQUID GLASS TUNING (global; applies to every component with liquid glass enabled) -->
+        <key type="d" name="liquid-glass-blur">
+            <default>5.0</default>
+            <summary>Double, blur radius for the dynamic liquid glass effect</summary>
+        </key>
+        <key type="d" name="liquid-glass-tint">
+            <default>0.1</default>
+            <summary>Double (0 to 1), tint opacity for the liquid glass effect</summary>
+        </key>
+        <key type="d" name="liquid-glass-refraction">
+            <default>2.0</default>
+            <summary>Double, refraction scale for the liquid glass effect</summary>
+        </key>
 
         <child name='overview' schema='org.gnome.shell.extensions.blur-my-shell.overview'></child>
         <child name='appfolder' schema='org.gnome.shell.extensions.blur-my-shell.appfolder'></child>
@@ -287,6 +300,11 @@
             <default>1</default>
             <summary>Enum to select the override mode (0 Blur on Window Proximity, 1 Background on Window Proximity). Required "override-background-dynamically" to be enabled.</summary>
         </key>
+        <!-- LIQUID GLASS (dynamic only) -->
+        <key type="b" name="liquid-glass">
+            <default>false</default>
+            <summary>Boolean, whether to use the dynamic liquid glass effect instead of the gaussian dynamic blur. Only active when static-blur is false.</summary>
+        </key>
     </schema>
 
     <!-- DASH TO DOCK -->
@@ -336,6 +354,11 @@
         <key type="b" name="static-blur">
             <default>true</default>
             <summary>Boolean, whether to use static or dynamic blur for this component</summary>
+        </key>
+        <!-- LIQUID GLASS (dynamic only) -->
+        <key type="b" name="liquid-glass">
+            <default>false</default>
+            <summary>Boolean, whether to use the dynamic liquid glass effect instead of the gaussian dynamic blur. Only active when static-blur is false.</summary>
         </key>
         <!-- OVERRIDE BACKGROUND -->
         <key type="b" name="override-background">
@@ -611,6 +634,11 @@
         <key type="b" name="static-blur">
             <default>false</default>
             <summary>Boolean, whether to use a static blur on popup surfaces</summary>
+        </key>
+        <!-- LIQUID GLASS (dynamic only) -->
+        <key type="b" name="liquid-glass">
+            <default>false</default>
+            <summary>Boolean, whether to use the dynamic liquid glass effect instead of the gaussian dynamic blur. Only active when static-blur is false.</summary>
         </key>
         <!-- PIPELINE -->
         <key type="s" name="pipeline">

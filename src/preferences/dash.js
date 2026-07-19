@@ -21,7 +21,9 @@ export const Dash = GObject.registerClass({
         'corner_radius',
         'override_background',
         'style_dash_to_dock',
-        'unblur_in_overview'
+        'unblur_in_overview',
+        'liquid_glass_row',
+        'liquid_glass'
     ],
 }, class Dash extends Adw.PreferencesPage {
     constructor(preferences, pipelines_manager, pipelines_page) {
@@ -62,6 +64,10 @@ export const Dash = GObject.registerClass({
             Gio.SettingsBindFlags.DEFAULT
         );
         this.preferences.dash_to_dock.settings.bind(
+            'liquid-glass', this._liquid_glass, 'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        this.preferences.dash_to_dock.settings.bind(
             'override-background',
             this._override_background, 'enable-expansion',
             Gio.SettingsBindFlags.DEFAULT
@@ -86,5 +92,6 @@ export const Dash = GObject.registerClass({
         this._brightness_row.set_visible(!is_static_blur);
         this._corner_radius_row.set_visible(!is_static_blur && this.preferences.ROUNDED_BLUR_FOUND);
         this._corner_radius_not_found_row.set_visible(!is_static_blur && !this.preferences.ROUNDED_BLUR_FOUND);
+        this._liquid_glass_row.set_visible(!is_static_blur);
     }
 });

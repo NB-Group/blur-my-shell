@@ -25,7 +25,9 @@ export const PopupBlur = GObject.registerClass({
         'dialog_corner_radius',
         'corner_radius_not_found_row',
         'override_background',
-        'style_popup'
+        'style_popup',
+        'liquid_glass_row',
+        'liquid_glass'
     ],
 }, class PopupBlur extends Adw.PreferencesPage {
     constructor(preferences, pipelines_manager, pipelines_page) {
@@ -63,6 +65,10 @@ export const PopupBlur = GObject.registerClass({
         );
         this.preferences.popup.settings.bind(
             'corner-radius', this._corner_radius, 'value',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        this.preferences.popup.settings.bind(
+            'liquid-glass', this._liquid_glass, 'active',
             Gio.SettingsBindFlags.DEFAULT
         );
         this.preferences.popup.settings.bind(
@@ -106,5 +112,6 @@ export const PopupBlur = GObject.registerClass({
         this._brightness_row.set_visible(!is_static_blur);
         this._corner_radius_row.set_visible(is_static_blur || this.preferences.ROUNDED_BLUR_FOUND);
         this._corner_radius_not_found_row.set_visible(!is_static_blur && !this.preferences.ROUNDED_BLUR_FOUND);
+        this._liquid_glass_row.set_visible(!is_static_blur);
     }
 });

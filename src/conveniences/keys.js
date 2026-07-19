@@ -8,6 +8,9 @@ export const KEYS = [
             { type: Type.I, name: "hacks-level" },
             { type: Type.B, name: "rounded-blur-found" },
             { type: Type.B, name: "debug" },
+            { type: Type.D, name: "liquid-glass-blur" },
+            { type: Type.D, name: "liquid-glass-tint" },
+            { type: Type.D, name: "liquid-glass-refraction" },
         ]
     },
     {
@@ -39,12 +42,14 @@ export const KEYS = [
             { type: Type.I, name: "style-panel" },
             { type: Type.B, name: "override-background-dynamically" },
             { type: Type.I, name: "override-background-dynamically-mode" },
+            { type: Type.B, name: "liquid-glass" },
         ]
     },
     {
         component: "dash-to-dock", schemas: [
             { type: Type.B, name: "blur" },
             { type: Type.B, name: "static-blur" },
+            { type: Type.B, name: "liquid-glass" },
             { type: Type.S, name: "pipeline" },
             { type: Type.I, name: "sigma" },
             { type: Type.D, name: "brightness" },
@@ -101,6 +106,7 @@ export const KEYS = [
         component: "popup", schemas: [
             { type: Type.B, name: "blur" },
             { type: Type.B, name: "static-blur" },
+            { type: Type.B, name: "liquid-glass" },
             { type: Type.S, name: "pipeline" },
             { type: Type.I, name: "sigma" },
             { type: Type.D, name: "brightness" },

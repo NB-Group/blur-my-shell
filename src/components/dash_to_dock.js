@@ -1,4 +1,6 @@
 import Meta from 'gi://Meta';
+import St from 'gi://St';
+import GLib from 'gi://GLib';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Signals from 'resource:///org/gnome/shell/misc/signals.js';
 
@@ -6,6 +8,7 @@ import { PaintSignals } from '../conveniences/paint_signals.js';
 
 import { Pipeline } from '../conveniences/pipeline.js';
 import { DummyPipeline } from '../conveniences/dummy_pipeline.js';
+import { LiquidGlassPipeline } from '../conveniences/liquid_glass_pipeline.js';
 
 const DASH_STYLES = [
     "transparent-dash",
@@ -69,6 +72,13 @@ class DashInfos {
 
     override_style() {
         this.remove_style();
+
+        // dash-to-dock's ThemeManager._adjustTheme writes an inline
+        // background-color onto dash._background once the dock is mapped;
+        // inline style beats our stylesheet's !important, so the dock would
+        // show the default color after login. Force-clear it so our style
+        // class wins.
+        this.dash._background.set_style(null);
 
         this.dash.set_style_class_name(
             DASH_STYLES[this.settings.dash_to_dock.STYLE_DASH_TO_DOCK]
@@ -163,6 +173,9 @@ class DashInfos {
 
             this.background.x = this.dash_background.x;
             this.background.y = this.dash_background.y + this.dash.y;
+
+            // liquid glass: keep the cloned backdrop aligned after the widget moved
+            this.bg_manager?._bms_pipeline?.reposition_clones?.();
         }
     }
 
@@ -255,6 +268,10 @@ export const DashBlur = class DashBlur extends Signals.EventEmitter {
                 dash_container._bms_pending_blur_setup = 0;
                 dash_container._bms_pending_blur_attempts = 0;
                 dash_container._bms_pending_blur_destroy_connected = false;
+                if (dash_container._bms_alloc_watch) {
+                    GLib.source_remove(dash_container._bms_alloc_watch);
+                    dash_container._bms_alloc_watch = 0;
+                }
             });
         }
 
@@ -269,7 +286,25 @@ export const DashBlur = class DashBlur extends Signals.EventEmitter {
                     (dash_container._bms_pending_blur_attempts ?? 0) + 1;
                 if (dash_container._bms_pending_blur_attempts > 30) {
                     dash_container._bms_pending_blur_attempts = 0;
-                    this._warn('giving up dash blur setup before allocation');
+                    // dock-to-dock on GNOME 50 can take longer than our 30-frame
+                    // (~0.5s) window to get a valid allocation, and a single
+                    // notify::width isn't enough (the failing actor may be a child
+                    // whose width settled early). Poll every 1s until allocated.
+                    this._warn('dash not allocated yet; polling until ready');
+                    if (!dash_container._bms_alloc_watch) {
+                        dash_container._bms_alloc_watch = GLib.timeout_add(
+                            GLib.PRIORITY_DEFAULT, 1000,
+                            () => {
+                                dash_container._bms_alloc_polls = (dash_container._bms_alloc_polls ?? 0) + 1;
+                                if (dash_container._bms_alloc_polls > 60) {
+                                    this._warn('dash never allocated after 60s; giving up');
+                                    dash_container._bms_alloc_watch = 0;
+                                    return GLib.SOURCE_REMOVE;
+                                }
+                                this._queue_try_blur(dash_container);
+                                return GLib.SOURCE_CONTINUE;
+                            });
+                    }
                     return false;
                 }
 
@@ -324,6 +359,12 @@ export const DashBlur = class DashBlur extends Signals.EventEmitter {
             this._log("dash to dock found, blurring it");
 
             this.dashes.push(this.blur_dash_from(dash, dash_container));
+
+            // we finally blurred it — drop the polling retry
+            if (dash_container._bms_alloc_watch) {
+                GLib.source_remove(dash_container._bms_alloc_watch);
+                dash_container._bms_alloc_watch = 0;
+            }
         }
     }
 
@@ -344,6 +385,22 @@ export const DashBlur = class DashBlur extends Signals.EventEmitter {
             dash_container,
             ['notify::width', 'notify::height', 'notify::y', 'notify::x'],
             _ => this.update_size()
+        );
+
+        // dash-to-dock rewrites dash._background's inline style when the dock
+        // becomes mapped (and whenever the system theme changes) — re-apply our
+        // override afterwards so that inline background-color doesn't cover our
+        // style class (the "dock turns default color after login" bug).
+        this.connections.connect(
+            dash_container,
+            'notify::mapped',
+            () => this.update_background()
+        );
+        const theme_context = St.ThemeContext.get_for_stage(global.stage);
+        this.connections.connect(
+            theme_context,
+            'changed',
+            () => this.update_background()
         );
 
         const dash_background = dash.get_children().find(child => {
@@ -392,6 +449,49 @@ export const DashBlur = class DashBlur extends Signals.EventEmitter {
                 background_group, 'bms-dash-blurred-widget'
             );
             bg_manager = bg_manager_list[0];
+        }
+        else if (this.settings.dash_to_dock.LIQUID_GLASS) {
+            const pipeline = new LiquidGlassPipeline(
+                global.blur_my_shell._effects_manager,
+                this.settings.dash_to_dock,
+                null,
+                {
+                    // match dash-to-dock's own dash-background corner radius so the
+                    // glass aligns with the dock's actual pill shape (not a generic
+                    // maxEdge which over-rounds it).
+                    corner_radius_getter: () => {
+                        try {
+                            const slider = dash?._slider;
+                            const box = slider?.get_child?.();
+                            const dashActor = box?.get_children?.()?.find(c => c.get_name?.() === 'dash');
+                            const dbg = dashActor?.get_children?.()?.find(
+                                c => c.get_style_class_name?.() === 'dash-background');
+                            const r = dbg?.get_theme_node?.()?.get_border_radius?.(St.Corner.TOPLEFT);
+                            if (r && r > 0)
+                                return r;
+                            // dash-to-dock doesn't always expose border-radius via the
+                            // theme node — fall back to a rounded-rect corner proportional
+                            // to dock height (apple-dock-like, not a full pill).
+                            const h = dbg?.height ?? 60;
+                            return Math.max(12, h * 0.35);
+                        } catch { return 24; }
+                    },
+                }
+            );
+            [background, bg_manager] = pipeline.create_background_with_effect(
+                background_group, 'bms-dash-liquid-glass-widget'
+            );
+            // liquid glass needs the same HACKS_LEVEL paint-signal refresh the
+            // gaussian branch sets up below — panel/popup get theirs via their
+            // own connect_repaints, but the dock branch omitted it, so the dock
+            // widget was never repainted and rendered fully transparent.
+            paint_signals = new PaintSignals(this.connections);
+            if (this.settings.HACKS_LEVEL === 1) {
+                paint_signals.disconnect_all();
+                paint_signals.connect(background, pipeline.effect);
+            } else {
+                paint_signals.disconnect_all();
+            }
         }
         else {
             const pipeline = new DummyPipeline(

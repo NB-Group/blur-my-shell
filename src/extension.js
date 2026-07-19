@@ -23,6 +23,7 @@ import { CoverflowAltTabBlur } from './components/coverflow_alt_tab.js';
 import { ApplicationsBlur } from './components/applications.js';
 import { ScreenshotBlur } from './components/screenshot.js';
 import { PopupBlur } from './components/popup.js';
+import { destroy_wg_capture } from './conveniences/liquid_glass_pipeline.js';
 
 const BlurModule = await import_in_shell_only('gi://Blur');
 
@@ -194,6 +195,10 @@ export default class BlurMyShell extends Extension {
 
         // remove the clipped redraws flag
         this._reenable_clipped_redraws();
+
+        // tear down the shared window_group capture so a disabled extension
+        // stops re-rendering window_group to an offscreen texture each frame
+        try { destroy_wg_capture(); } catch (_e) { }
 
         // remove the extension from GJS's global
         delete global.blur_my_shell;
@@ -415,6 +420,12 @@ export default class BlurMyShell extends Extension {
                 this._panel_blur.reset();
         });
 
+        // liquid glass toggled on/off (dynamic mode) — rebuild the panel blur
+        this._settings.panel.LIQUID_GLASS_changed(() => {
+            if (this._settings.panel.BLUR)
+                this._panel_blur.reset();
+        });
+
         // panel pipeline changed
         this._settings.panel.PIPELINE_changed(() => {
             if (this._settings.panel.BLUR)
@@ -471,6 +482,12 @@ export default class BlurMyShell extends Extension {
 
         // static blur toggled on/off
         this._settings.dash_to_dock.STATIC_BLUR_changed(() => {
+            if (this._settings.dash_to_dock.BLUR)
+                this._dash_to_dock_blur.change_blur_type();
+        });
+
+        // liquid glass toggled on/off (dynamic mode) — rebuild the dash blur
+        this._settings.dash_to_dock.LIQUID_GLASS_changed(() => {
             if (this._settings.dash_to_dock.BLUR)
                 this._dash_to_dock_blur.change_blur_type();
         });
@@ -600,6 +617,10 @@ export default class BlurMyShell extends Extension {
                 this._window_list_blur.disable();
         });
 
+        // liquid glass toggled on/off (dynamic mode) — rebuild window list blur
+        // NOTE: window-list has no liquid-glass pipeline implementation yet
+        // (only panel/dash/popup do), so this hook is intentionally absent.
+
 
         // ---------- COVERFLOW ALT-TAB ----------
 
@@ -658,6 +679,12 @@ export default class BlurMyShell extends Extension {
         });
 
         this._settings.popup.STATIC_BLUR_changed(() => {
+            if (this._settings.popup.BLUR)
+                this._popup.reset();
+        });
+
+        // liquid glass toggled on/off (dynamic mode) — rebuild popups
+        this._settings.popup.LIQUID_GLASS_changed(() => {
             if (this._settings.popup.BLUR)
                 this._popup.reset();
         });

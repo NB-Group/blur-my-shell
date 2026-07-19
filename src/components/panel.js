@@ -7,6 +7,7 @@ import { PaintSignals } from '../conveniences/paint_signals.js';
 
 import { Pipeline } from '../conveniences/pipeline.js';
 import { DummyPipeline } from '../conveniences/dummy_pipeline.js';
+import { LiquidGlassPipeline } from '../conveniences/liquid_glass_pipeline.js';
 
 const DASH_TO_PANEL_UUID = 'dash-to-panel@jderose9.github.com';
 const PANEL_STYLES = [
@@ -221,6 +222,15 @@ export const PanelBlur = class PanelBlur {
             );
             bg_manager = bg_manager_list[0];
         }
+        else if (this.settings.panel.LIQUID_GLASS) {
+            pipeline = new LiquidGlassPipeline(
+                this.effects_manager, this.settings.panel, null,
+                { corner_radius_getter: () => 0 }
+            );
+            [background, bg_manager] = pipeline.create_background_with_effect(
+                background_group, 'bms-panel-liquid-glass-widget'
+            );
+        }
         else {
             pipeline = new DummyPipeline(this.effects_manager, this.settings.panel);
             [background, bg_manager] = pipeline.create_background_with_effect(
@@ -399,6 +409,9 @@ export const PanelBlur = class PanelBlur {
             }
             background.width = geometry_width;
             background.height = geometry_height;
+
+            // liquid glass: keep the cloned backdrop aligned after widget move/resize
+            actors.bg_manager?._bms_pipeline?.reposition_clones?.();
         }
 
         // update the monitor panel is on
@@ -555,6 +568,18 @@ export const PanelBlur = class PanelBlur {
 
     /// Update the visibility of the blur effect
     update_visibility() {
+        // Liquid-glass panel is always translucent (refracts what's behind it),
+        // so it doesn't need the "hide when no window overlaps" behavior.
+        // Skipping this ALSO fixes interference with the applications-blur
+        // component: this callback fires on every window_actor notify::allocation
+        // (i.e. while a window is dragged) and set_should_override_panel toggles
+        // panel style classes → panel relayout → a stage-wide relayout that
+        // stalls applications' blur_actor (a child of the dragged window_actor),
+        // producing the "half sharp / half blurred" offset. Only panel tracks
+        // windows (dock/popup don't), which is why only panel liquid glass
+        // triggered it.
+        if (this.settings.panel.LIQUID_GLASS)
+            return;
         if (
             isMainPanelAlive && Main.panel.has_style_pseudo_class('overview')
             || !Main.sessionMode.hasWindows

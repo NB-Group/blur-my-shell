@@ -183,7 +183,58 @@
         </property>
       </object>
     </child>
+    <child>
+      <object class="AdwPreferencesGroup">
+        <property name="title" translatable="yes">Liquid Glass</property>
+        <property name="description" translatable="yes">Tuning for the dynamic liquid glass effect (panel, dash, popups).</property>
+        <child>
+          <object class="AdwSpinRow" id="liquid_glass_blur_row">
+            <property name="title" translatable="yes">Blur radius</property>
+            <property name="subtitle" translatable="yes">Gaussian blur strength of the glass.</property>
+            <property name="adjustment">liquid_glass_blur_adj</property>
+            <property name="digits">0</property>
+          </object>
+        </child>
+        <child>
+          <object class="AdwSpinRow" id="liquid_glass_tint_row">
+            <property name="title" translatable="yes">Tint opacity</property>
+            <property name="subtitle" translatable="yes">0 = clear, 1 = opaque tint.</property>
+            <property name="adjustment">liquid_glass_tint_adj</property>
+            <property name="digits">2</property>
+          </object>
+        </child>
+        <child>
+          <object class="AdwSpinRow" id="liquid_glass_refraction_row">
+            <property name="title" translatable="yes">Refraction scale</property>
+            <property name="subtitle" translatable="yes">How strongly the glass bends what is behind it.</property>
+            <property name="adjustment">liquid_glass_refraction_adj</property>
+            <property name="digits">1</property>
+          </object>
+        </child>
+      </object>
+    </child>
   </template>
+
+  <object class="GtkAdjustment" id="liquid_glass_blur_adj">
+    <property name="lower">0</property>
+    <property name="upper">48</property>
+    <property name="step-increment">1</property>
+    <property name="value">5</property>
+  </object>
+
+  <object class="GtkAdjustment" id="liquid_glass_tint_adj">
+    <property name="lower">0.0</property>
+    <property name="upper">1.0</property>
+    <property name="step-increment">0.01</property>
+    <property name="value">0.1</property>
+  </object>
+
+  <object class="GtkAdjustment" id="liquid_glass_refraction_adj">
+    <property name="lower">0.0</property>
+    <property name="upper">6.0</property>
+    <property name="step-increment">0.1</property>
+    <property name="value">2.0</property>
+  </object>
 
   <object class="GtkAdjustment" id="window_list_sigma">
     <property name="lower">0</property>
